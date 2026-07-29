@@ -388,7 +388,7 @@ function renderAll() {
           </div>
           <div style="display:flex;align-items:center;gap:10px">
             <div class="level-count">${done}/${tasks.length}</div>
-            <div class="chevron ${isOpen?'open'}">▼</div>
+            <div class="chevron ${isOpen?'open':''}">▼</div>
           </div>
         </div>
         ${isOpen ? `<div class="level-tasks">
