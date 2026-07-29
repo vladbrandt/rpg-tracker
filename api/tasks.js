@@ -9,7 +9,6 @@ function fmt(page) {
     skill: getSelect(page, 'Навык'),
     status: getSelect(page, 'Статус'),
     chapterIds: getRelationIds(page, 'Глава'),
-    weekIds: getRelationIds(page, 'Неделя'),
   };
 }
 
@@ -20,23 +19,14 @@ export default async function handler(req, res) {
 
   try {
     if (req.method === 'GET') {
-      const { weekId, chapterId, status } = req.query;
+      const { chapterId, status } = req.query;
       let filter;
-
-      if (weekId) {
-        filter = { property: 'Неделя', relation: { contains: weekId } };
-      } else if (chapterId) {
-        filter = {
-          and: [
-            { property: 'Глава', relation: { contains: chapterId } },
-            { property: 'Неделя', relation: { is_empty: true } },
-          ]
-        };
-        if (status) filter.and.push({ property: 'Статус', select: { equals: status } });
+      if (chapterId) {
+        filter = { property: 'Глава', relation: { contains: chapterId } };
+        if (status) filter = { and: [filter, { property: 'Статус', select: { equals: status } }] };
       } else if (status) {
         filter = { property: 'Статус', select: { equals: status } };
       }
-
       const pages = await queryDB(DB.tasks, filter);
       return res.json({ tasks: pages.map(fmt) });
     }
@@ -54,17 +44,16 @@ export default async function handler(req, res) {
     }
 
     if (req.method === 'PATCH') {
-      const { id, status, weekId } = req.body;
+      const { id, status } = req.body;
       const props = {};
       if (status) props['Статус'] = select(status);
-      if (weekId) props['Неделя'] = relation([weekId]);
-      if (weekId === null) props['Неделя'] = { relation: [] };
       const page = await updatePage(id, props);
       return res.json({ task: fmt(page) });
     }
 
     res.status(405).end();
   } catch (e) {
+    console.error('tasks error:', e.message);
     res.status(500).json({ error: e.message });
   }
 }
