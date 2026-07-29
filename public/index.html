@@ -200,34 +200,43 @@ function navigate(screen) {
 }
 
 async function loadAll() {
+  document.getElementById('char-content').innerHTML = '<div class="loader">Загрузка...</div>';
   try {
-    const [skillsRes, chapRes, habitsRes, achRes] = await Promise.all([
-      api('GET', '/api/skills'),
-      api('GET', '/api/chapters'),
-      api('GET', '/api/habits'),
-      api('GET', '/api/achievements'),
-    ]);
-    state.skills = skillsRes.skills;
+    // Chapters first (needed for tasks)
+    const chapRes = await api('GET', '/api/chapters');
     state.chapters = chapRes.chapters;
     state.activeChapters = chapRes.chapters.filter(c => c.status === 'Активная');
+
+    // All in parallel
+    const [skillsRes, habitsRes, achRes, tasksRes] = await Promise.all([
+      api('GET', '/api/skills'),
+      api('GET', '/api/habits'),
+      api('GET', '/api/achievements'),
+      api('GET', '/api/tasks'),
+    ]);
+    state.skills = skillsRes.skills;
     state.habits = habitsRes.habits;
     state.achievements = achRes.achievements;
-
-    // Load all tasks at once
-    const tasksRes = await api('GET', '/api/tasks');
     state.allTasks = tasksRes.tasks;
 
-    // Load habit logs for active week
-    const weekRes = await api('GET', '/api/weeks');
-    state.activeWeek = weekRes.weeks.find(w => w.status === 'Активная') ?? null;
-    if (state.activeWeek) {
-      const logsRes = await api('GET', `/api/habit-logs?weekId=${state.activeWeek.id}`);
-      state.habitLogs = logsRes.logs;
-    }
+    // Habit logs (optional, won't block)
+    try {
+      const weekRes = await api('GET', '/api/weeks');
+      state.activeWeek = weekRes.weeks.find(w => w.status === 'Активная') ?? null;
+      if (state.activeWeek) {
+        const logsRes = await api('GET', `/api/habit-logs?weekId=${state.activeWeek.id}`);
+        state.habitLogs = logsRes.logs;
+      }
+    } catch(_) {}
 
     renderChar();
   } catch(e) {
-    document.getElementById('char-content').innerHTML = `<div class="empty">⚠️ ${e.message}</div>`;
+    document.getElementById('char-content').innerHTML = `
+      <div class="empty">
+        <div style="font-size:32px;margin-bottom:12px">⚠️</div>
+        <div style="margin-bottom:16px">${e.message}</div>
+        <button class="btn" onclick="loadAll()">Повторить</button>
+      </div>`;
   }
 }
 
