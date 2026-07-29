@@ -6,237 +6,109 @@
 <title>⚔️ RPG Трекер</title>
 <script src="https://telegram.org/js/telegram-web-app.js"></script>
 <style>
-  *{box-sizing:border-box;margin:0;padding:0}
-  :root{
-    --bg: var(--tg-theme-bg-color, #1a1a2e);
-    --bg2: var(--tg-theme-secondary-bg-color, #16213e);
-    --text: var(--tg-theme-text-color, #eee);
-    --hint: var(--tg-theme-hint-color, #888);
-    --btn: var(--tg-theme-button-color, #5865f2);
-    --btn-text: var(--tg-theme-button-text-color, #fff);
-    --accent: #7c6af2;
-    --green: #4caf50;
-    --amber: #ff9800;
-    --red: #f44336;
-    --border: rgba(255,255,255,0.08);
-    --radius: 12px;
-  }
-  body{
-    background:var(--bg);
-    color:var(--text);
-    font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
-    font-size:15px;
-    min-height:100vh;
-    padding-bottom:70px;
-  }
-  /* NAV */
-  .nav{
-    position:fixed;bottom:0;left:0;right:0;
-    background:var(--bg2);
-    border-top:1px solid var(--border);
-    display:flex;z-index:100;
-  }
-  .nav-btn{
-    flex:1;padding:10px 4px;
-    background:none;border:none;color:var(--hint);
-    font-size:11px;cursor:pointer;
-    display:flex;flex-direction:column;align-items:center;gap:2px;
-    transition:color .2s;
-  }
-  .nav-btn.active{color:var(--btn);}
-  .nav-btn svg{width:22px;height:22px;}
-
-  /* SCREENS */
-  .screen{display:none;padding:16px;max-width:480px;margin:0 auto;}
-  .screen.active{display:block;}
-
-  /* HEADER */
-  .screen-title{font-size:20px;font-weight:700;margin-bottom:16px;}
-
-  /* CARD */
-  .card{
-    background:var(--bg2);border-radius:var(--radius);
-    padding:14px;margin-bottom:12px;
-    border:1px solid var(--border);
-  }
-  .card-title{font-size:13px;color:var(--hint);font-weight:500;margin-bottom:8px;text-transform:uppercase;letter-spacing:.05em;}
-
-  /* SKILL BAR */
-  .skill-row{display:flex;align-items:center;gap:10px;margin-bottom:10px;}
-  .skill-row:last-child{margin-bottom:0;}
-  .skill-name{font-size:13px;width:100px;flex-shrink:0;}
-  .skill-bar-bg{flex:1;height:6px;background:var(--border);border-radius:3px;overflow:hidden;}
-  .skill-bar{height:100%;border-radius:3px;transition:width .4s ease;background:var(--btn);}
-  .skill-val{font-size:13px;font-weight:600;width:28px;text-align:right;flex-shrink:0;}
-  .skill-lvl{font-size:11px;color:var(--hint);width:36px;text-align:right;flex-shrink:0;}
-
-  /* CHARACTER */
-  .char-header{display:flex;align-items:center;gap:14px;margin-bottom:16px;}
-  .char-avatar{
-    width:52px;height:52px;border-radius:50%;
-    background:var(--btn);display:flex;align-items:center;justify-content:center;
-    font-size:24px;flex-shrink:0;
-  }
-  .char-name{font-size:18px;font-weight:700;}
-  .char-level{font-size:13px;color:var(--hint);margin-top:2px;}
-
-  /* CHAPTER */
-  .chapter-card{border-left:3px solid var(--accent);}
-  .chapter-name{font-size:16px;font-weight:600;margin-bottom:4px;}
-  .chapter-text{font-size:13px;color:var(--hint);line-height:1.5;}
-
-  /* TASK / HABIT ITEM */
-  .item{
-    display:flex;align-items:center;gap:10px;
-    padding:10px 0;border-bottom:1px solid var(--border);
-  }
-  .item:last-child{border-bottom:none;}
-  .item-check{
-    width:20px;height:20px;border-radius:5px;
-    border:1.5px solid var(--hint);flex-shrink:0;
-    cursor:pointer;display:flex;align-items:center;justify-content:center;
-    transition:all .2s;
-  }
-  .item-check.done{background:var(--green);border-color:var(--green);}
-  .item-check svg{display:none;}
-  .item-check.done svg{display:block;}
-  .item-info{flex:1;}
-  .item-name{font-size:14px;}
-  .item-name.done{color:var(--hint);text-decoration:line-through;}
-  .item-tag{
-    font-size:11px;margin-top:2px;
-    display:inline-block;padding:1px 6px;border-radius:4px;
-  }
-  .tag-m{background:rgba(88,101,242,.2);color:#818cf8;}
-  .tag-s{background:rgba(168,85,247,.2);color:#c084fc;}
-  .tag-l{background:rgba(74,222,128,.2);color:#4ade80;}
-
-  /* ACHIEVEMENT */
-  .ach-item{
-    display:flex;align-items:center;gap:12px;
-    padding:10px 0;border-bottom:1px solid var(--border);
-  }
-  .ach-item:last-child{border-bottom:none;}
-  .ach-icon{font-size:22px;flex-shrink:0;width:32px;text-align:center;}
-  .ach-info{flex:1;}
-  .ach-name{font-size:14px;}
-  .ach-name.received{color:var(--hint);}
-  .ach-sub{font-size:11px;color:var(--hint);margin-top:2px;}
-  .ach-btn{
-    padding:4px 10px;border-radius:6px;border:none;cursor:pointer;
-    font-size:12px;font-weight:500;
-    background:var(--btn);color:var(--btn-text);
-    flex-shrink:0;
-  }
-  .ach-btn:disabled{background:var(--border);color:var(--hint);cursor:default;}
-
-  /* BADGE */
-  .badge{
-    display:inline-block;padding:2px 8px;border-radius:10px;
-    font-size:11px;font-weight:600;
-    background:rgba(255,152,0,.15);color:var(--amber);
-  }
-
-  /* BUTTON */
-  .btn{
-    width:100%;padding:12px;border-radius:var(--radius);border:none;
-    background:var(--btn);color:var(--btn-text);
-    font-size:15px;font-weight:600;cursor:pointer;
-    margin-top:12px;transition:opacity .2s;
-  }
-  .btn:active{opacity:.8;}
-  .btn-outline{
-    background:transparent;border:1.5px solid var(--btn);color:var(--btn);
-  }
-  .btn-sm{
-    padding:8px 14px;font-size:13px;width:auto;margin-top:0;border-radius:8px;
-  }
-
-  /* MODAL */
-  .modal-overlay{
-    display:none;position:fixed;inset:0;
-    background:rgba(0,0,0,.6);z-index:200;
-    align-items:flex-end;
-  }
-  .modal-overlay.open{display:flex;}
-  .modal{
-    background:var(--bg2);border-radius:var(--radius) var(--radius) 0 0;
-    padding:20px 16px;width:100%;max-height:80vh;overflow-y:auto;
-  }
-  .modal-title{font-size:17px;font-weight:700;margin-bottom:16px;}
-  .input{
-    width:100%;padding:11px 12px;
-    background:var(--bg);border:1px solid var(--border);
-    border-radius:8px;color:var(--text);font-size:15px;
-    margin-bottom:10px;outline:none;
-  }
-  .input:focus{border-color:var(--btn);}
-  .select-row{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:12px;}
-  .select-opt{
-    padding:8px;border-radius:8px;border:1.5px solid var(--border);
-    background:transparent;color:var(--text);font-size:13px;cursor:pointer;
-    text-align:center;transition:all .15s;
-  }
-  .select-opt.active{border-color:var(--btn);background:rgba(88,101,242,.15);}
-
-  /* SECTION HEADER */
-  .section-header{
-    display:flex;align-items:center;justify-content:space-between;
-    margin-bottom:8px;
-  }
-  .section-label{font-size:13px;color:var(--hint);font-weight:500;text-transform:uppercase;letter-spacing:.05em;}
-
-  /* SUBTASKS */
-  .subtask-list{padding:4px 0 4px 30px;border-top:1px solid var(--border);}
-  .subtask-item{display:flex;align-items:center;gap:8px;padding:5px 0;}
-  .subtask-check{
-    width:15px;height:15px;border-radius:3px;
-    border:1.5px solid var(--hint);flex-shrink:0;
-    cursor:pointer;display:flex;align-items:center;justify-content:center;
-  }
-  .subtask-check.done{background:var(--green);border-color:var(--green);}
-  .subtask-name{font-size:13px;color:var(--text-secondary,var(--hint));}
-  .subtask-name.done{color:var(--hint);text-decoration:line-through;}
-  .subtask-add{
-    display:flex;align-items:center;gap:6px;
-    padding:4px 0;color:var(--hint);font-size:12px;cursor:pointer;
-    background:none;border:none;
-  }
-  .subtask-add:hover{color:var(--btn);}
-  .task-expand{
-    font-size:11px;color:var(--hint);cursor:pointer;
-    background:none;border:none;padding:2px 0;margin-top:2px;
-    display:flex;align-items:center;gap:4px;
-  }
-
-  /* EMPTY STATE */
-  .empty{text-align:center;padding:32px 16px;color:var(--hint);}
-  .empty-icon{font-size:36px;margin-bottom:8px;}
-
-  /* LOADER */
-  .loader{text-align:center;padding:40px;color:var(--hint);}
-
-  /* TABS (achievements) */
-  .tabs{display:flex;gap:6px;margin-bottom:14px;overflow-x:auto;pb:4px;}
-  .tab{
-    padding:6px 14px;border-radius:20px;border:1.5px solid var(--border);
-    background:transparent;color:var(--hint);font-size:13px;cursor:pointer;
-    white-space:nowrap;transition:all .15s;flex-shrink:0;
-  }
-  .tab.active{border-color:var(--btn);color:var(--btn);background:rgba(88,101,242,.12);}
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:var(--tg-theme-bg-color,#1a1a2e);
+  --bg2:var(--tg-theme-secondary-bg-color,#16213e);
+  --text:var(--tg-theme-text-color,#eee);
+  --hint:var(--tg-theme-hint-color,#888);
+  --btn:var(--tg-theme-button-color,#5865f2);
+  --btn-text:var(--tg-theme-button-text-color,#fff);
+  --green:#4caf50;--amber:#ff9800;--border:rgba(255,255,255,0.08);--radius:12px;
+}
+body{background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;font-size:15px;min-height:100vh;padding-bottom:70px}
+.nav{position:fixed;bottom:0;left:0;right:0;background:var(--bg2);border-top:1px solid var(--border);display:flex;z-index:100}
+.nav-btn{flex:1;padding:10px 2px;background:none;border:none;color:var(--hint);font-size:10px;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:2px;transition:color .2s}
+.nav-btn.active{color:var(--btn)}
+.nav-btn svg{width:20px;height:20px}
+.screen{display:none;padding:16px;max-width:480px;margin:0 auto}
+.screen.active{display:block}
+.screen-title{font-size:20px;font-weight:700;margin-bottom:16px}
+.card{background:var(--bg2);border-radius:var(--radius);padding:14px;margin-bottom:12px;border:1px solid var(--border)}
+.card-title{font-size:12px;color:var(--hint);font-weight:500;margin-bottom:8px;text-transform:uppercase;letter-spacing:.05em}
+.skill-row{display:flex;align-items:center;gap:10px;margin-bottom:10px}
+.skill-row:last-child{margin-bottom:0}
+.skill-name{font-size:13px;width:100px;flex-shrink:0}
+.skill-bar-bg{flex:1;height:6px;background:var(--border);border-radius:3px;overflow:hidden}
+.skill-bar{height:100%;border-radius:3px;transition:width .4s ease;background:var(--btn)}
+.skill-val{font-size:13px;font-weight:600;width:28px;text-align:right;flex-shrink:0}
+.skill-lvl{font-size:11px;color:var(--hint);width:36px;text-align:right;flex-shrink:0}
+.char-header{display:flex;align-items:center;gap:14px;margin-bottom:16px}
+.char-avatar{width:52px;height:52px;border-radius:50%;background:var(--btn);display:flex;align-items:center;justify-content:center;font-size:24px;flex-shrink:0}
+.chapter-card{border-left:3px solid var(--btn);margin-bottom:16px}
+.chapter-label{font-size:11px;color:var(--hint);text-transform:uppercase;letter-spacing:.05em;margin-bottom:4px}
+.chapter-name{font-size:15px;font-weight:600;margin-bottom:4px}
+.chapter-text{font-size:13px;color:var(--hint);line-height:1.5}
+.item{display:flex;align-items:flex-start;gap:10px;padding:8px 0;border-bottom:1px solid var(--border)}
+.item:last-child{border-bottom:none}
+.item-check{width:20px;height:20px;border-radius:5px;border:1.5px solid var(--hint);flex-shrink:0;margin-top:2px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .2s}
+.item-check.done{background:var(--green);border-color:var(--green)}
+.item-info{flex:1}
+.item-name{font-size:14px;line-height:1.4}
+.item-name.done{color:var(--hint);text-decoration:line-through}
+.item-tag{font-size:11px;margin-top:2px;display:inline-block;padding:1px 6px;border-radius:4px}
+.tag-m{background:rgba(88,101,242,.2);color:#818cf8}
+.tag-s{background:rgba(168,85,247,.2);color:#c084fc}
+.tag-l{background:rgba(74,222,128,.2);color:#4ade80}
+.subtask-list{padding:4px 0 4px 30px;border-top:1px solid var(--border);margin-top:2px}
+.subtask-item{display:flex;align-items:center;gap:8px;padding:4px 0}
+.sub-check{width:15px;height:15px;border-radius:3px;border:1.5px solid var(--hint);flex-shrink:0;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .2s}
+.sub-check.done{background:var(--green);border-color:var(--green)}
+.sub-name{font-size:13px;color:var(--hint)}
+.sub-name.done{text-decoration:line-through}
+.sub-add{display:flex;align-items:center;gap:5px;padding:3px 0;color:var(--hint);font-size:12px;cursor:pointer;background:none;border:none}
+.expand-btn{font-size:11px;color:var(--hint);cursor:pointer;background:none;border:none;padding:1px 0}
+.ach-item{display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid var(--border)}
+.ach-item:last-child{border-bottom:none}
+.ach-icon{font-size:22px;width:32px;text-align:center;flex-shrink:0}
+.ach-name{font-size:14px}
+.ach-name.received{color:var(--hint)}
+.ach-sub{font-size:11px;color:var(--hint);margin-top:2px}
+.ach-btn{padding:4px 10px;border-radius:6px;border:none;cursor:pointer;font-size:12px;font-weight:500;background:var(--btn);color:var(--btn-text);flex-shrink:0}
+.btn{width:100%;padding:12px;border-radius:var(--radius);border:none;background:var(--btn);color:var(--btn-text);font-size:15px;font-weight:600;cursor:pointer;margin-top:12px}
+.btn-sm{padding:7px 12px;font-size:13px;width:auto;margin-top:0;border-radius:8px}
+.modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:200;align-items:flex-end}
+.modal-overlay.open{display:flex}
+.modal{background:var(--bg2);border-radius:var(--radius) var(--radius) 0 0;padding:20px 16px;width:100%}
+.modal-title{font-size:17px;font-weight:700;margin-bottom:16px}
+.input{width:100%;padding:11px 12px;background:var(--bg);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:15px;margin-bottom:10px;outline:none}
+.input:focus{border-color:var(--btn)}
+.select-row{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:12px}
+.select-opt{padding:8px;border-radius:8px;border:1.5px solid var(--border);background:transparent;color:var(--text);font-size:13px;cursor:pointer;text-align:center;transition:all .15s}
+.select-opt.active{border-color:var(--btn);background:rgba(88,101,242,.15)}
+.tabs{display:flex;gap:6px;margin-bottom:14px;overflow-x:auto}
+.tab{padding:6px 14px;border-radius:20px;border:1.5px solid var(--border);background:transparent;color:var(--hint);font-size:13px;cursor:pointer;white-space:nowrap;transition:all .15s;flex-shrink:0}
+.tab.active{border-color:var(--btn);color:var(--btn);background:rgba(88,101,242,.12)}
+.section-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}
+.section-label{font-size:12px;color:var(--hint);font-weight:500;text-transform:uppercase;letter-spacing:.05em}
+.empty{text-align:center;padding:32px 16px;color:var(--hint)}
+.loader{text-align:center;padding:40px;color:var(--hint)}
+/* All levels accordion */
+.level-block{background:var(--bg2);border-radius:var(--radius);margin-bottom:10px;border:1px solid var(--border);overflow:hidden}
+.level-header{display:flex;align-items:center;justify-content:space-between;padding:12px 14px;cursor:pointer}
+.level-title{font-size:14px;font-weight:600}
+.level-track{font-size:11px;color:var(--hint);margin-top:2px}
+.level-tasks{padding:0 14px 12px}
+.level-count{font-size:12px;color:var(--hint);flex-shrink:0}
+.chevron{font-size:12px;color:var(--hint);transition:transform .2s}
+.chevron.open{transform:rotate(180deg)}
 </style>
 </head>
 <body>
 
-<!-- SCREENS -->
 <div id="screen-char" class="screen active">
   <div class="screen-title">⚔️ Персонаж</div>
   <div id="char-content"><div class="loader">Загрузка...</div></div>
 </div>
 
 <div id="screen-tasks" class="screen">
-  <div class="screen-title">✅ Задачи</div>
+  <div class="screen-title">🗡️ Текущий уровень</div>
   <div id="tasks-content"><div class="loader">Загрузка...</div></div>
+</div>
+
+<div id="screen-all" class="screen">
+  <div class="screen-title">📜 Все уровни</div>
+  <div id="all-content"><div class="loader">Загрузка...</div></div>
 </div>
 
 <div id="screen-habits" class="screen">
@@ -249,23 +121,21 @@
   <div id="ach-content"><div class="loader">Загрузка...</div></div>
 </div>
 
-<!-- NAV -->
 <nav class="nav">
   <button class="nav-btn active" onclick="navigate('char')">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>
-    Персонаж
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>Персонаж
   </button>
   <button class="nav-btn" onclick="navigate('tasks')">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M8 10h8M8 14h5"/></svg>
-    Задачи
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 12l2 2 4-4"/><rect x="3" y="3" width="18" height="18" rx="2"/></svg>Уровень
+  </button>
+  <button class="nav-btn" onclick="navigate('all')">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><circle cx="3" cy="6" r="1"/><circle cx="3" cy="12" r="1"/><circle cx="3" cy="18" r="1"/></svg>Все
   </button>
   <button class="nav-btn" onclick="navigate('habits')">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20z"/><path d="M12 6v6l4 2"/></svg>
-    Привычки
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>Привычки
   </button>
   <button class="nav-btn" onclick="navigate('ach')">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87L18.18 21 12 17.77 5.82 21 7 14.14 2 9.27l6.91-1.01z"/></svg>
-    Достижения
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87L18.18 21 12 17.77 5.82 21 7 14.14 2 9.27l6.91-1.01z"/></svg>Достижения
   </button>
 </nav>
 
@@ -280,108 +150,105 @@
       <button class="select-opt" data-skill="SPOTONE" onclick="selectSkill(this)">SPOTONE</button>
       <button class="select-opt" data-skill="Личное" onclick="selectSkill(this)">Личное</button>
     </div>
-    <button class="btn" onclick="submitTask()">Добавить квест</button>
-    <button class="btn btn-outline" style="margin-top:8px" onclick="closeModal('modal-task')">Отмена</button>
+    <button class="btn" onclick="submitTask()">Добавить</button>
+    <button class="btn" style="background:transparent;border:1.5px solid var(--btn);color:var(--btn);margin-top:8px" onclick="closeModal('modal-task')">Отмена</button>
   </div>
 </div>
 
 <script>
 const tg = window.Telegram?.WebApp;
 if (tg) { tg.ready(); tg.expand(); }
-
 const API = '';
 const initData = tg?.initData ?? '';
 
-// ─── State ────────────────────────────────────────────────────────────────────
 let state = {
-  skills: [], chapters: [], activeChapter: null, activeChapters: [],
-  activeWeek: null, tasks: [], backlog: [],
-  habits: [], habitLogs: [], achievements: [],
+  skills: [],
+  chapters: [],
+  activeChapters: [],
+  allTasks: [],        // все задачи
+  habits: [],
+  habitLogs: [],
+  achievements: [],
   achFilter: 'all',
-  subtasks: {}, // taskId → array of subtasks
+  subtasks: {},
   expandedTasks: new Set(),
+  expandedLevels: new Set(),
+  activeWeek: null,
 };
 
-// ─── API ──────────────────────────────────────────────────────────────────────
 async function api(method, path, body) {
   const res = await fetch(API + path, {
     method,
-    headers: {
-      'Content-Type': 'application/json',
-      'X-Telegram-Init-Data': initData,
-    },
+    headers: { 'Content-Type': 'application/json', 'X-Telegram-Init-Data': initData },
     body: body ? JSON.stringify(body) : undefined,
   });
   if (!res.ok) throw new Error(`API error ${res.status}`);
   return res.json();
 }
 
-// ─── Navigation ───────────────────────────────────────────────────────────────
-let currentScreen = 'char';
 function navigate(screen) {
   document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
   document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
   document.getElementById('screen-' + screen).classList.add('active');
-  document.querySelectorAll('.nav-btn')[['char','tasks','habits','ach'].indexOf(screen)].classList.add('active');
-  currentScreen = screen;
+  const idx = ['char','tasks','all','habits','ach'].indexOf(screen);
+  document.querySelectorAll('.nav-btn')[idx].classList.add('active');
   if (screen === 'char') renderChar();
   if (screen === 'tasks') renderTasks();
+  if (screen === 'all') renderAll();
   if (screen === 'habits') renderHabits();
   if (screen === 'ach') renderAch();
 }
 
-// ─── Load data ────────────────────────────────────────────────────────────────
 async function loadAll() {
   try {
-    const [skillsRes, chapRes, weekRes] = await Promise.all([
+    const [skillsRes, chapRes, habitsRes, achRes] = await Promise.all([
       api('GET', '/api/skills'),
       api('GET', '/api/chapters'),
-      api('GET', '/api/weeks'),
+      api('GET', '/api/habits'),
+      api('GET', '/api/achievements'),
     ]);
     state.skills = skillsRes.skills;
     state.chapters = chapRes.chapters;
     state.activeChapters = chapRes.chapters.filter(c => c.status === 'Активная');
-    state.activeChapter = state.activeChapters[0] ?? null;
-    state.activeWeek = weekRes.weeks.find(w => w.status === 'Активная') ?? null;
+    state.habits = habitsRes.habits;
+    state.achievements = achRes.achievements;
 
+    // Load all tasks at once
+    const tasksRes = await api('GET', '/api/tasks');
+    state.allTasks = tasksRes.tasks;
+
+    // Load habit logs for active week
+    const weekRes = await api('GET', '/api/weeks');
+    state.activeWeek = weekRes.weeks.find(w => w.status === 'Активная') ?? null;
     if (state.activeWeek) {
-      const [tasksRes, habitsRes, logsRes] = await Promise.all([
-        api('GET', `/api/tasks?weekId=${state.activeWeek.id}`),
-        api('GET', '/api/habits'),
-        api('GET', `/api/habit-logs?weekId=${state.activeWeek.id}`),
-      ]);
-      state.tasks = tasksRes.tasks;
-      state.habits = habitsRes.habits;
+      const logsRes = await api('GET', `/api/habit-logs?weekId=${state.activeWeek.id}`);
       state.habitLogs = logsRes.logs;
     }
 
-    state.backlog = [];
-    for (const chap of state.activeChapters) {
-      const backlogRes = await api('GET', `/api/tasks?chapterId=${chap.id}`);
-      state.backlog.push(...backlogRes.tasks.filter(t => t.status !== 'done'));
-    }
-
-    const achRes = await api('GET', '/api/achievements');
-    state.achievements = achRes.achievements;
-
     renderChar();
   } catch(e) {
-    document.getElementById('char-content').innerHTML = `<div class="empty"><div class="empty-icon">⚠️</div>${e.message}</div>`;
+    document.getElementById('char-content').innerHTML = `<div class="empty">⚠️ ${e.message}</div>`;
   }
 }
 
-// ─── CHAR SCREEN ──────────────────────────────────────────────────────────────
-function skillTag(name) {
-  if (name === 'Маркетинг') return 'Мар.';
-  if (name === 'SPOTONE') return 'SPO.';
-  return 'Лич.';
+// ── Helpers ──────────────────────────────────────────────────────────────────
+function tagClass(skill) {
+  if (skill === 'Маркетинг') return 'tag-m';
+  if (skill === 'SPOTONE') return 'tag-s';
+  return 'tag-l';
 }
 
+function trackLabel(chapterName) {
+  return chapterName?.startsWith('М') ? 'Маркетинг' : 'SPOTONE';
+}
+
+function tasksForChapter(chapterId) {
+  return state.allTasks.filter(t => t.chapterIds.includes(chapterId));
+}
+
+// ── CHAR ─────────────────────────────────────────────────────────────────────
 function renderChar() {
   const charLevel = state.chapters.filter(c => c.status === 'Закрыта').length + 1;
-  const chap = state.activeChapter;
-  const week = state.activeWeek;
-
   const skillRows = state.skills.map(s => {
     const pct = Math.min(100, ((s.balls % 20) / 20) * 100);
     return `<div class="skill-row">
@@ -392,183 +259,175 @@ function renderChar() {
     </div>`;
   }).join('');
 
-  const chapBlock = state.activeChapters.length > 0
-    ? state.activeChapters.map(c => `
-    <div class="card chapter-card">
-      <div class="card-title">Активная глава · ${c.name.startsWith('М') ? 'Маркетинг' : 'SPOTONE'}</div>
-      <div class="chapter-name">${c.name}</div>
-      <div class="chapter-text">${c.narrative || ''}</div>
-    </div>`).join('')
-    : `<div class="card">
-      <div class="empty"><div class="empty-icon">🗺️</div>Нет активных глав</div>
-      <button class="btn" onclick="showNewChapterModal()">Создать главу</button>
-    </div>`;
-
-  const weekBlock = week ? `
-    <div class="card">
-      <div class="section-header">
-        <div class="card-title">${week.name}</div>
-        <span class="badge">Активная</span>
-      </div>
-      <div style="color:var(--hint);font-size:13px">
-        ${state.tasks.filter(t=>t.status==='done').length} из ${state.tasks.length} задач выполнено
-      </div>
-      <button class="btn btn-outline btn-sm" style="margin-top:10px;width:100%" onclick="newWeek()">
-        Начать новую неделю
-      </button>
-    </div>` : `
-    <div class="card">
-      <div class="empty"><div class="empty-icon">📅</div>Нет активной недели</div>
-      <button class="btn" onclick="newWeek()">Начать неделю</button>
-    </div>`;
+  const chapBlocks = state.activeChapters.length > 0
+    ? state.activeChapters.map(c => {
+        const tasks = tasksForChapter(c.id);
+        const done = tasks.filter(t => t.status === 'done').length;
+        return `<div class="card chapter-card">
+          <div class="chapter-label">${trackLabel(c.name)}</div>
+          <div class="chapter-name">${c.name}</div>
+          <div class="chapter-text">${c.narrative || ''}</div>
+          <div style="font-size:12px;color:var(--hint);margin-top:8px">${done} из ${tasks.length} задач выполнено</div>
+        </div>`;
+      }).join('')
+    : `<div class="card"><div class="empty">Нет активных уровней</div></div>`;
 
   document.getElementById('char-content').innerHTML = `
     <div class="char-header">
       <div class="char-avatar">⚔️</div>
       <div>
-        <div class="char-name">Влад</div>
-        <div class="char-level">Уровень персонажа: ${charLevel}</div>
+        <div style="font-size:18px;font-weight:700">Влад</div>
+        <div style="font-size:13px;color:var(--hint)">Уровень персонажа: ${charLevel}</div>
       </div>
     </div>
     <div class="card">
       <div class="card-title">Навыки</div>
-      ${skillRows || '<div class="empty">Загрузка...</div>'}
+      ${skillRows}
     </div>
-    ${chapBlock}
-    ${weekBlock}
-  `;
+    ${chapBlocks}`;
 }
 
-// ─── TASKS SCREEN ─────────────────────────────────────────────────────────────
-function renderTasks() {
-  const week = state.activeWeek;
-  if (!week) {
-    document.getElementById('tasks-content').innerHTML = `
-      <div class="empty"><div class="empty-icon">📅</div>Сначала начни неделю</div>`;
-    return;
-  }
+// ── TASKS (current level) ─────────────────────────────────────────────────────
+function taskItemHTML(t) {
+  const subs = state.subtasks[t.id] ?? [];
+  const expanded = state.expandedTasks.has(t.id);
+  const doneCount = subs.filter(s => s.done).length;
 
-  const todo = state.tasks.filter(t => t.status === 'todo');
-  const done = state.tasks.filter(t => t.status === 'done');
-
-  const taskItem = (t) => {
-    const subs = state.subtasks[t.id] ?? [];
-    const expanded = state.expandedTasks.has(t.id);
-    const doneCount = subs.filter(s => s.done).length;
-    const subProgress = subs.length > 0 ? ` · ${doneCount}/${subs.length}` : '';
-
-    const subtaskBlock = expanded ? `
-      <div class="subtask-list">
-        ${subs.map(s => `
-          <div class="subtask-item">
-            <div class="subtask-check ${s.done?'done':''}" onclick="toggleSubtask('${s.id}','${t.id}',${s.done})">
-              ${s.done ? '<svg width="10" height="10" viewBox="0 0 12 12" fill="none" stroke="white" stroke-width="2.5"><path d="M2 6l3 3 5-5"/></svg>' : ''}
-            </div>
-            <div class="subtask-name ${s.done?'done':''}">${s.name}</div>
-          </div>`).join('')}
-        <button class="subtask-add" onclick="addSubtask('${t.id}')">
-          <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 2v8M2 6h8"/></svg>
-          Добавить подзадачу
-        </button>
-      </div>` : '';
-
-    return `
-    <div class="item" id="task-${t.id}" style="flex-direction:column;align-items:stretch;gap:0">
-      <div style="display:flex;align-items:center;gap:10px;padding:${expanded?'8px 0 4px':'0'}">
-        <div class="item-check ${t.status==='done'?'done':''}" onclick="toggleTask('${t.id}','${t.status}')">
-          <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="white" stroke-width="2.5"><path d="M2 6l3 3 5-5"/></svg>
-        </div>
-        <div class="item-info">
-          <div class="item-name ${t.status==='done'?'done':''}">${t.name}</div>
-          <div style="display:flex;align-items:center;gap:6px;margin-top:2px">
-            <span class="item-tag ${tagClass(t.skill)}">${t.skill}</span>
-            <button class="task-expand" onclick="toggleExpand('${t.id}')">
-              ${expanded ? '▲' : '▼'} подзадачи${subProgress}
-            </button>
+  const subBlock = expanded ? `
+    <div class="subtask-list">
+      ${subs.map(s => `
+        <div class="subtask-item">
+          <div class="sub-check ${s.done?'done':''}" onclick="toggleSubtask('${s.id}','${t.id}',${s.done})">
+            ${s.done?'<svg width="10" height="10" viewBox="0 0 12 12" fill="none" stroke="white" stroke-width="2.5"><path d="M2 6l3 3 5-5"/></svg>':''}
           </div>
-        </div>
-      </div>
-      ${subtaskBlock}
-    </div>`;
-  };
+          <div class="sub-name ${s.done?'done':''}">${s.name}</div>
+        </div>`).join('')}
+      <button class="sub-add" onclick="addSubtask('${t.id}')">
+        <svg width="11" height="11" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 2v8M2 6h8"/></svg>
+        Добавить подзадачу
+      </button>
+    </div>` : '';
 
-  const backlogItems = state.backlog.length ? state.backlog.map(t => `
-    <div class="item" id="bl-${t.id}">
-      <div class="item-check" onclick="addToWeek('${t.id}')">
-        <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="white" stroke-width="2"><path d="M6 2v8M2 6h8"/></svg>
+  return `<div class="item" style="flex-direction:column;align-items:stretch;gap:0">
+    <div style="display:flex;align-items:flex-start;gap:10px;padding:${expanded?'8px 0 4px':'4px 0'}">
+      <div class="item-check ${t.status==='done'?'done':''}" onclick="toggleTask('${t.id}','${t.status}')">
+        ${t.status==='done'?'<svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="white" stroke-width="2.5"><path d="M2 6l3 3 5-5"/></svg>':''}
       </div>
       <div class="item-info">
-        <div class="item-name">${t.name}</div>
-        <span class="item-tag ${tagClass(t.skill)}">${t.skill}</span>
+        <div class="item-name ${t.status==='done'?'done':''}">${t.name}</div>
+        <div style="display:flex;gap:6px;align-items:center;margin-top:3px">
+          <span class="item-tag ${tagClass(t.skill)}">${t.skill}</span>
+          <button class="expand-btn" onclick="toggleExpand('${t.id}')">
+            ${expanded?'▲':'▼'} подзадачи${subs.length?` · ${doneCount}/${subs.length}`:''}
+          </button>
+        </div>
       </div>
-    </div>`).join('') : '<div style="color:var(--hint);font-size:13px;padding:8px 0">Бэклог пуст</div>';
-
-  document.getElementById('tasks-content').innerHTML = `
-    <div class="card">
-      <div class="section-header">
-        <div class="card-title">Эта неделя — ${todo.length} задач</div>
-        <button class="btn btn-sm" onclick="openModal('modal-task')">+ Квест</button>
-      </div>
-      ${todo.length ? todo.map(taskItem).join('') : '<div class="empty" style="padding:16px 0">Нет задач — добавь квест!</div>'}
-      ${done.length ? `<div class="card-title" style="margin-top:12px">Выполнено (${done.length})</div>${done.map(taskItem).join('')}` : ''}
     </div>
-    <div class="card">
-      <div class="card-title">Бэклог главы</div>
-      ${backlogItems}
-    </div>`;
+    ${subBlock}
+  </div>`;
 }
 
-function tagClass(skill) {
-  if (skill === 'Маркетинг') return 'tag-m';
-  if (skill === 'SPOTONE') return 'tag-s';
-  return 'tag-l';
-}
-
-async function toggleTask(id, currentStatus) {
-  const newStatus = currentStatus === 'done' ? 'todo' : 'done';
-  await api('PATCH', '/api/tasks', { id, status: newStatus });
-  const task = state.tasks.find(t => t.id === id);
-  if (task) task.status = newStatus;
-  if (newStatus === 'done') {
-    const skill = task?.skill;
-    const s = state.skills.find(sk => sk.name === skill);
-    if (s) { s.balls++; s.level = Math.floor(s.balls / 20); }
-  } else {
-    const skill = task?.skill;
-    const s = state.skills.find(sk => sk.name === skill);
-    if (s && s.balls > 0) { s.balls--; s.level = Math.floor(s.balls / 20); }
-  }
-  renderTasks();
-}
-
-async function addToWeek(taskId) {
-  if (!state.activeWeek) return;
-  await api('PATCH', '/api/tasks', { id: taskId, weekId: state.activeWeek.id });
-  const task = state.backlog.find(t => t.id === taskId);
-  if (task) {
-    task.weekIds = [state.activeWeek.id];
-    state.backlog = state.backlog.filter(t => t.id !== taskId);
-    state.tasks.push(task);
-  }
-  renderTasks();
-}
-
-// ─── HABITS SCREEN ────────────────────────────────────────────────────────────
-function renderHabits() {
-  const week = state.activeWeek;
-  const habitMap = Object.fromEntries(state.habits.map(h => [h.id, h]));
-
-  if (!week) {
-    document.getElementById('habits-content').innerHTML =
-      '<div class="empty"><div class="empty-icon">📅</div>Сначала начни неделю</div>';
+function renderTasks() {
+  if (!state.activeChapters.length) {
+    document.getElementById('tasks-content').innerHTML = '<div class="empty">Нет активных уровней</div>';
     return;
   }
 
+  let html = '';
+  for (const chap of state.activeChapters) {
+    const tasks = tasksForChapter(chap.id);
+    const todo = tasks.filter(t => t.status !== 'done');
+    const done = tasks.filter(t => t.status === 'done');
+    html += `
+      <div style="margin-bottom:16px">
+        <div class="section-header">
+          <div>
+            <div class="section-label">${trackLabel(chap.name)}</div>
+            <div style="font-size:15px;font-weight:600;margin-top:2px">${chap.name}</div>
+          </div>
+          <button class="btn btn-sm" onclick="openModal('modal-task','${chap.id}','${trackLabel(chap.name)}')">+ Квест</button>
+        </div>
+        <div class="card" style="padding:6px 14px">
+          ${todo.length ? todo.map(taskItemHTML).join('') : '<div style="padding:12px 0;color:var(--hint);font-size:13px;text-align:center">Все задачи выполнены! 🎉</div>'}
+          ${done.length ? `<div style="margin-top:8px;padding-top:8px;border-top:1px solid var(--border)">
+            <div class="card-title">Выполнено (${done.length})</div>
+            ${done.map(taskItemHTML).join('')}
+          </div>` : ''}
+        </div>
+      </div>`;
+  }
+
+  document.getElementById('tasks-content').innerHTML = html;
+}
+
+// ── ALL LEVELS ────────────────────────────────────────────────────────────────
+function renderAll() {
+  const mChaps = state.chapters.filter(c => c.name.startsWith('М')).sort((a,b) => (a.name>b.name?1:-1));
+  const sChaps = state.chapters.filter(c => c.name.startsWith('S')).sort((a,b) => (a.name>b.name?1:-1));
+
+  function chapBlock(chaps, trackName) {
+    return chaps.map(c => {
+      const tasks = tasksForChapter(c.id);
+      const done = tasks.filter(t => t.status === 'done').length;
+      const isOpen = state.expandedLevels.has(c.id);
+      const isActive = c.status === 'Активная';
+      return `<div class="level-block">
+        <div class="level-header" onclick="toggleLevel('${c.id}')">
+          <div>
+            <div class="level-title">${c.name} ${isActive?'<span style="color:var(--btn);font-size:11px">● активный</span>':''}</div>
+            <div class="level-track">${trackName}</div>
+          </div>
+          <div style="display:flex;align-items:center;gap:10px">
+            <div class="level-count">${done}/${tasks.length}</div>
+            <div class="chevron ${isOpen?'open'}">▼</div>
+          </div>
+        </div>
+        ${isOpen ? `<div class="level-tasks">
+          ${tasks.length ? tasks.map(t => `
+            <div class="item" style="flex-direction:column;align-items:stretch;gap:0">
+              <div style="display:flex;align-items:flex-start;gap:10px;padding:4px 0">
+                <div class="item-check ${t.status==='done'?'done':''}" onclick="toggleTask('${t.id}','${t.status}');renderAll()">
+                  ${t.status==='done'?'<svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="white" stroke-width="2.5"><path d="M2 6l3 3 5-5"/></svg>':''}
+                </div>
+                <div class="item-name ${t.status==='done'?'done':''}">${t.name}</div>
+              </div>
+            </div>`).join('')
+          : '<div style="color:var(--hint);font-size:13px;padding:8px 0">Нет задач</div>'}
+        </div>` : ''}
+      </div>`;
+    }).join('');
+  }
+
+  document.getElementById('all-content').innerHTML = `
+    <div style="font-size:13px;color:var(--hint);font-weight:500;text-transform:uppercase;letter-spacing:.05em;margin-bottom:8px">Маркетинг</div>
+    ${chapBlock(mChaps, 'Маркетинг')}
+    <div style="font-size:13px;color:var(--hint);font-weight:500;text-transform:uppercase;letter-spacing:.05em;margin:16px 0 8px">SPOTONE</div>
+    ${chapBlock(sChaps, 'SPOTONE')}`;
+}
+
+function toggleLevel(id) {
+  if (state.expandedLevels.has(id)) state.expandedLevels.delete(id);
+  else state.expandedLevels.add(id);
+  renderAll();
+}
+
+// ── HABITS ───────────────────────────────────────────────────────────────────
+function renderHabits() {
+  const habitMap = Object.fromEntries(state.habits.map(h => [h.id, h]));
+  if (!state.activeWeek) {
+    document.getElementById('habits-content').innerHTML = `
+      <div class="card">
+        <div class="empty">Нет активной недели</div>
+        <button class="btn" onclick="newWeek()">Начать неделю</button>
+      </div>`;
+    return;
+  }
+  const done = state.habitLogs.filter(l => l.done).length;
   const items = state.habitLogs.map(log => {
     const habit = habitMap[log.habitId] ?? {};
-    return `<div class="item" id="log-${log.id}">
+    return `<div class="item">
       <div class="item-check ${log.done?'done':''}" onclick="toggleLog('${log.id}','${log.habitId}',${log.done})">
-        <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="white" stroke-width="2.5"><path d="M2 6l3 3 5-5"/></svg>
+        ${log.done?'<svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="white" stroke-width="2.5"><path d="M2 6l3 3 5-5"/></svg>':''}
       </div>
       <div class="item-info">
         <div class="item-name ${log.done?'done':''}">${log.name || habit.name || 'Привычка'}</div>
@@ -576,12 +435,13 @@ function renderHabits() {
       </div>
     </div>`;
   }).join('');
-
-  const done = state.habitLogs.filter(l => l.done).length;
   document.getElementById('habits-content').innerHTML = `
     <div class="card">
-      <div class="card-title">${done} из ${state.habitLogs.length} выполнено</div>
-      ${items || '<div class="empty" style="padding:16px 0">Нет привычек — добавь в Notion</div>'}
+      <div class="section-header">
+        <div class="card-title">${done} из ${state.habitLogs.length} выполнено</div>
+        <button class="btn btn-sm" onclick="newWeek()">Новая неделя</button>
+      </div>
+      ${items || '<div style="color:var(--hint);font-size:13px;padding:8px 0">Нет привычек</div>'}
     </div>`;
 }
 
@@ -591,127 +451,78 @@ async function toggleLog(logId, habitId, currentDone) {
   const log = state.habitLogs.find(l => l.id === logId);
   if (log) log.done = newDone;
   const habit = state.habits.find(h => h.id === habitId);
-  const skill = habit?.skill;
-  const s = state.skills.find(sk => sk.name === skill);
-  if (s) {
-    if (newDone) { s.balls++; } else if (s.balls > 0) { s.balls--; }
-    s.level = Math.floor(s.balls / 20);
-  }
+  const s = state.skills.find(sk => sk.name === habit?.skill);
+  if (s) { if (newDone) s.balls++; else if (s.balls > 0) s.balls--; s.level = Math.floor(s.balls / 20); }
   renderHabits();
 }
 
-// ─── ACHIEVEMENTS SCREEN ──────────────────────────────────────────────────────
+async function newWeek() {
+  if (state.activeWeek && !confirm('Начать новую неделю?')) return;
+  const res = await api('POST', '/api/weeks', {});
+  state.activeWeek = res.week;
+  state.habitLogs = res.habitLogsCreated > 0
+    ? (await api('GET', `/api/habit-logs?weekId=${res.week.id}`)).logs
+    : [];
+  renderHabits();
+}
+
+// ── ACHIEVEMENTS ──────────────────────────────────────────────────────────────
 function renderAch() {
-  const filter = state.achFilter;
   const all = state.achievements;
+  const filter = state.achFilter;
   const filtered = filter === 'all' ? all
     : filter === 'received' ? all.filter(a => a.received)
     : all.filter(a => a.skill === filter);
-
-  const skillFilters = ['all','Маркетинг','SPOTONE','Личное','received'];
-  const filterLabels = { all:'Все', Маркетинг:'Маркетинг', SPOTONE:'SPOTONE', Личное:'Личное', received:'Получены' };
-
-  const tabs = skillFilters.map(f => `
-    <button class="tab ${state.achFilter===f?'active':''}" onclick="setAchFilter('${f}')">${filterLabels[f]}</button>
-  `).join('');
-
   const receivedCount = all.filter(a => a.received).length;
-
-  const items = filtered.map(a => {
-    const icon = a.received ? '🏆' : '🔒';
-    return `<div class="ach-item">
-      <div class="ach-icon">${icon}</div>
-      <div class="ach-info">
+  const tabs = ['all','Маркетинг','SPOTONE','Личное','received'].map(f => {
+    const labels = {all:'Все',Маркетинг:'Маркетинг',SPOTONE:'SPOTONE',Личное:'Личное',received:'Получены'};
+    return `<button class="tab ${state.achFilter===f?'active':''}" onclick="setAchFilter('${f}')">${labels[f]}</button>`;
+  }).join('');
+  const items = filtered.map(a => `
+    <div class="ach-item">
+      <div class="ach-icon">${a.received?'🏆':'🔒'}</div>
+      <div style="flex:1">
         <div class="ach-name ${a.received?'received':''}">${a.name}</div>
         <div class="ach-sub">${a.skill} · +${a.balls} баллов${a.isCheckpoint?' · чекпоинт':''}</div>
       </div>
-      ${!a.received ? `<button class="ach-btn" onclick="receiveAch('${a.id}')">✓ Получено</button>` : ''}
-    </div>`;
-  }).join('');
-
+      ${!a.received?`<button class="ach-btn" onclick="receiveAch('${a.id}')">✓</button>`:''}
+    </div>`).join('');
   document.getElementById('ach-content').innerHTML = `
-    <div style="margin-bottom:8px;font-size:13px;color:var(--hint)">
-      Получено: ${receivedCount} из ${all.length}
-    </div>
+    <div style="font-size:13px;color:var(--hint);margin-bottom:8px">Получено: ${receivedCount} из ${all.length}</div>
     <div class="tabs">${tabs}</div>
-    <div class="card">
-      ${items || '<div class="empty"><div class="empty-icon">🔍</div>Нет достижений</div>'}
-    </div>`;
+    <div class="card">${items || '<div class="empty">Нет достижений</div>'}</div>`;
 }
 
-function setAchFilter(f) {
-  state.achFilter = f;
-  renderAch();
-}
+function setAchFilter(f) { state.achFilter = f; renderAch(); }
 
 async function receiveAch(id) {
   await api('PATCH', '/api/achievements', { id, received: true });
-  const ach = state.achievements.find(a => a.id === id);
-  if (ach) {
-    ach.received = true;
-    const s = state.skills.find(sk => sk.name === ach.skill);
-    if (s) { s.balls += ach.balls; s.level = Math.floor(s.balls / 20); }
+  const a = state.achievements.find(a => a.id === id);
+  if (a) {
+    a.received = true;
+    const s = state.skills.find(sk => sk.name === a.skill);
+    if (s) { s.balls += a.balls; s.level = Math.floor(s.balls / 20); }
   }
   renderAch();
 }
 
-// ─── ADD TASK MODAL ───────────────────────────────────────────────────────────
-let selectedSkill = 'Маркетинг';
-
-function openModal(id) {
-  document.getElementById(id).classList.add('open');
-}
-function closeModal(id) {
-  document.getElementById(id).classList.remove('open');
-  document.getElementById('task-name-input').value = '';
-}
-function selectSkill(btn) {
-  document.querySelectorAll('.select-opt').forEach(b => b.classList.remove('active'));
-  btn.classList.add('active');
-  selectedSkill = btn.dataset.skill;
-}
-
-async function submitTask() {
-  const name = document.getElementById('task-name-input').value.trim();
-  if (!name) return;
-  // Auto-assign to chapter based on skill
-  let chapterId = null;
-  if (selectedSkill === 'Маркетинг') {
-    chapterId = state.activeChapters.find(c => c.name.startsWith('М'))?.id ?? state.activeChapters[0]?.id ?? null;
-  } else if (selectedSkill === 'SPOTONE') {
-    chapterId = state.activeChapters.find(c => c.name.startsWith('S'))?.id ?? state.activeChapters[0]?.id ?? null;
-  } else {
-    chapterId = state.activeChapters[0]?.id ?? null;
+// ── TASKS ACTIONS ─────────────────────────────────────────────────────────────
+async function toggleTask(id, currentStatus) {
+  const newStatus = currentStatus === 'done' ? 'todo' : 'done';
+  await api('PATCH', '/api/tasks', { id, status: newStatus });
+  const task = state.allTasks.find(t => t.id === id);
+  if (task) {
+    task.status = newStatus;
+    const s = state.skills.find(sk => sk.name === task.skill);
+    if (s) {
+      if (newStatus === 'done') s.balls++;
+      else if (s.balls > 0) s.balls--;
+      s.level = Math.floor(s.balls / 20);
+    }
   }
-  const weekId = state.activeWeek?.id ?? null;
-  const res = await api('POST', '/api/tasks', { name, skill: selectedSkill, chapterId });
-  const task = res.task;
-  if (weekId) {
-    await api('PATCH', '/api/tasks', { id: task.id, weekId });
-    task.weekIds = [weekId];
-    state.tasks.push(task);
-  } else {
-    state.backlog.push(task);
-  }
-  closeModal('modal-task');
-  renderTasks();
+  if (document.getElementById('screen-tasks').classList.contains('active')) renderTasks();
 }
 
-// ─── NEW WEEK ─────────────────────────────────────────────────────────────────
-async function newWeek() {
-  if (state.activeWeek) {
-    const ok = confirm('Завершить текущую неделю и начать новую?');
-    if (!ok) return;
-  }
-  const res = await api('POST', '/api/weeks', {});
-  state.activeWeek = res.week;
-  state.tasks = [];
-  const logsRes = await api('GET', `/api/habit-logs?weekId=${res.week.id}`);
-  state.habitLogs = logsRes.logs;
-  navigate('tasks');
-}
-
-// ─── SUBTASKS ─────────────────────────────────────────────────────────────────
 async function toggleExpand(taskId) {
   if (state.expandedTasks.has(taskId)) {
     state.expandedTasks.delete(taskId);
@@ -728,29 +539,18 @@ async function toggleExpand(taskId) {
 async function toggleSubtask(subId, taskId, currentDone) {
   const newDone = !currentDone;
   await api('PATCH', '/api/subtasks', { id: subId, done: newDone });
-
   const subs = state.subtasks[taskId] ?? [];
   const sub = subs.find(s => s.id === subId);
   if (sub) sub.done = newDone;
-
-  // +1 ball for subtask
-  const task = [...state.tasks, ...state.backlog].find(t => t.id === taskId);
-  const skill = task?.skill;
-  const s = state.skills.find(sk => sk.name === skill);
-  if (s) {
-    if (newDone) s.balls++;
-    else if (s.balls > 0) s.balls--;
-    s.level = Math.floor(s.balls / 20);
-  }
-
-  // If all subtasks done → auto-complete parent task + bonus ball
+  const task = state.allTasks.find(t => t.id === taskId);
+  const s = state.skills.find(sk => sk.name === task?.skill);
+  if (s) { if (newDone) s.balls++; else if (s.balls > 0) s.balls--; s.level = Math.floor(s.balls / 20); }
   const allDone = subs.length > 0 && subs.every(s => s.done);
   if (allDone && task && task.status !== 'done') {
     await api('PATCH', '/api/tasks', { id: taskId, status: 'done' });
     task.status = 'done';
     if (s) { s.balls++; s.level = Math.floor(s.balls / 20); }
   }
-
   renderTasks();
 }
 
@@ -763,7 +563,55 @@ async function addSubtask(taskId) {
   renderTasks();
 }
 
-// ─── INIT ─────────────────────────────────────────────────────────────────────
+// ── ADD TASK ──────────────────────────────────────────────────────────────────
+let selectedSkill = 'Маркетинг';
+let modalChapterId = null;
+
+function openModal(id, chapterId, track) {
+  modalChapterId = chapterId ?? null;
+  if (track === 'SPOTONE') {
+    selectedSkill = 'SPOTONE';
+    document.querySelectorAll('.select-opt').forEach(b => {
+      b.classList.toggle('active', b.dataset.skill === 'SPOTONE');
+    });
+  } else {
+    selectedSkill = 'Маркетинг';
+    document.querySelectorAll('.select-opt').forEach(b => {
+      b.classList.toggle('active', b.dataset.skill === 'Маркетинг');
+    });
+  }
+  document.getElementById(id).classList.add('open');
+}
+
+function closeModal(id) {
+  document.getElementById(id).classList.remove('open');
+  document.getElementById('task-name-input').value = '';
+  modalChapterId = null;
+}
+
+function selectSkill(btn) {
+  document.querySelectorAll('.select-opt').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  selectedSkill = btn.dataset.skill;
+}
+
+async function submitTask() {
+  const name = document.getElementById('task-name-input').value.trim();
+  if (!name) return;
+  let chapterId = modalChapterId;
+  if (!chapterId) {
+    if (selectedSkill === 'SPOTONE') {
+      chapterId = state.activeChapters.find(c => c.name.startsWith('S'))?.id ?? state.activeChapters[0]?.id ?? null;
+    } else {
+      chapterId = state.activeChapters.find(c => c.name.startsWith('М'))?.id ?? state.activeChapters[0]?.id ?? null;
+    }
+  }
+  const res = await api('POST', '/api/tasks', { name, skill: selectedSkill, chapterId });
+  state.allTasks.push(res.task);
+  closeModal('modal-task');
+  renderTasks();
+}
+
 loadAll();
 </script>
 </body>
