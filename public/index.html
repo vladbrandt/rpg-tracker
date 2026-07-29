@@ -186,6 +186,29 @@
   }
   .section-label{font-size:13px;color:var(--hint);font-weight:500;text-transform:uppercase;letter-spacing:.05em;}
 
+  /* SUBTASKS */
+  .subtask-list{padding:4px 0 4px 30px;border-top:1px solid var(--border);}
+  .subtask-item{display:flex;align-items:center;gap:8px;padding:5px 0;}
+  .subtask-check{
+    width:15px;height:15px;border-radius:3px;
+    border:1.5px solid var(--hint);flex-shrink:0;
+    cursor:pointer;display:flex;align-items:center;justify-content:center;
+  }
+  .subtask-check.done{background:var(--green);border-color:var(--green);}
+  .subtask-name{font-size:13px;color:var(--text-secondary,var(--hint));}
+  .subtask-name.done{color:var(--hint);text-decoration:line-through;}
+  .subtask-add{
+    display:flex;align-items:center;gap:6px;
+    padding:4px 0;color:var(--hint);font-size:12px;cursor:pointer;
+    background:none;border:none;
+  }
+  .subtask-add:hover{color:var(--btn);}
+  .task-expand{
+    font-size:11px;color:var(--hint);cursor:pointer;
+    background:none;border:none;padding:2px 0;margin-top:2px;
+    display:flex;align-items:center;gap:4px;
+  }
+
   /* EMPTY STATE */
   .empty{text-align:center;padding:32px 16px;color:var(--hint);}
   .empty-icon{font-size:36px;margin-bottom:8px;}
@@ -275,6 +298,8 @@ let state = {
   activeWeek: null, tasks: [], backlog: [],
   habits: [], habitLogs: [], achievements: [],
   achFilter: 'all',
+  subtasks: {}, // taskId → array of subtasks
+  expandedTasks: new Set(),
 };
 
 // ─── API ──────────────────────────────────────────────────────────────────────
@@ -426,16 +451,46 @@ function renderTasks() {
   const todo = state.tasks.filter(t => t.status === 'todo');
   const done = state.tasks.filter(t => t.status === 'done');
 
-  const taskItem = (t) => `
-    <div class="item" id="task-${t.id}">
-      <div class="item-check ${t.status==='done'?'done':''}" onclick="toggleTask('${t.id}','${t.status}')">
-        <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="white" stroke-width="2.5"><path d="M2 6l3 3 5-5"/></svg>
+  const taskItem = (t) => {
+    const subs = state.subtasks[t.id] ?? [];
+    const expanded = state.expandedTasks.has(t.id);
+    const doneCount = subs.filter(s => s.done).length;
+    const subProgress = subs.length > 0 ? ` · ${doneCount}/${subs.length}` : '';
+
+    const subtaskBlock = expanded ? `
+      <div class="subtask-list">
+        ${subs.map(s => `
+          <div class="subtask-item">
+            <div class="subtask-check ${s.done?'done':''}" onclick="toggleSubtask('${s.id}','${t.id}',${s.done})">
+              ${s.done ? '<svg width="10" height="10" viewBox="0 0 12 12" fill="none" stroke="white" stroke-width="2.5"><path d="M2 6l3 3 5-5"/></svg>' : ''}
+            </div>
+            <div class="subtask-name ${s.done?'done':''}">${s.name}</div>
+          </div>`).join('')}
+        <button class="subtask-add" onclick="addSubtask('${t.id}')">
+          <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 2v8M2 6h8"/></svg>
+          Добавить подзадачу
+        </button>
+      </div>` : '';
+
+    return `
+    <div class="item" id="task-${t.id}" style="flex-direction:column;align-items:stretch;gap:0">
+      <div style="display:flex;align-items:center;gap:10px;padding:${expanded?'8px 0 4px':'0'}">
+        <div class="item-check ${t.status==='done'?'done':''}" onclick="toggleTask('${t.id}','${t.status}')">
+          <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="white" stroke-width="2.5"><path d="M2 6l3 3 5-5"/></svg>
+        </div>
+        <div class="item-info">
+          <div class="item-name ${t.status==='done'?'done':''}">${t.name}</div>
+          <div style="display:flex;align-items:center;gap:6px;margin-top:2px">
+            <span class="item-tag ${tagClass(t.skill)}">${t.skill}</span>
+            <button class="task-expand" onclick="toggleExpand('${t.id}')">
+              ${expanded ? '▲' : '▼'} подзадачи${subProgress}
+            </button>
+          </div>
+        </div>
       </div>
-      <div class="item-info">
-        <div class="item-name ${t.status==='done'?'done':''}">${t.name}</div>
-        <span class="item-tag ${tagClass(t.skill)}">${t.skill}</span>
-      </div>
+      ${subtaskBlock}
     </div>`;
+  };
 
   const backlogItems = state.backlog.length ? state.backlog.map(t => `
     <div class="item" id="bl-${t.id}">
@@ -654,6 +709,58 @@ async function newWeek() {
   const logsRes = await api('GET', `/api/habit-logs?weekId=${res.week.id}`);
   state.habitLogs = logsRes.logs;
   navigate('tasks');
+}
+
+// ─── SUBTASKS ─────────────────────────────────────────────────────────────────
+async function toggleExpand(taskId) {
+  if (state.expandedTasks.has(taskId)) {
+    state.expandedTasks.delete(taskId);
+  } else {
+    state.expandedTasks.add(taskId);
+    if (!state.subtasks[taskId]) {
+      const res = await api('GET', `/api/subtasks?taskId=${taskId}`);
+      state.subtasks[taskId] = res.subtasks;
+    }
+  }
+  renderTasks();
+}
+
+async function toggleSubtask(subId, taskId, currentDone) {
+  const newDone = !currentDone;
+  await api('PATCH', '/api/subtasks', { id: subId, done: newDone });
+
+  const subs = state.subtasks[taskId] ?? [];
+  const sub = subs.find(s => s.id === subId);
+  if (sub) sub.done = newDone;
+
+  // +1 ball for subtask
+  const task = [...state.tasks, ...state.backlog].find(t => t.id === taskId);
+  const skill = task?.skill;
+  const s = state.skills.find(sk => sk.name === skill);
+  if (s) {
+    if (newDone) s.balls++;
+    else if (s.balls > 0) s.balls--;
+    s.level = Math.floor(s.balls / 20);
+  }
+
+  // If all subtasks done → auto-complete parent task + bonus ball
+  const allDone = subs.length > 0 && subs.every(s => s.done);
+  if (allDone && task && task.status !== 'done') {
+    await api('PATCH', '/api/tasks', { id: taskId, status: 'done' });
+    task.status = 'done';
+    if (s) { s.balls++; s.level = Math.floor(s.balls / 20); }
+  }
+
+  renderTasks();
+}
+
+async function addSubtask(taskId) {
+  const name = prompt('Название подзадачи:');
+  if (!name?.trim()) return;
+  const res = await api('POST', '/api/subtasks', { name: name.trim(), taskId });
+  if (!state.subtasks[taskId]) state.subtasks[taskId] = [];
+  state.subtasks[taskId].push(res.subtask);
+  renderTasks();
 }
 
 // ─── INIT ─────────────────────────────────────────────────────────────────────
