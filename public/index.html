@@ -81,7 +81,17 @@ body{background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSy
 .tab.active{border-color:var(--btn);color:var(--btn);background:rgba(88,101,242,.12)}
 .section-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}
 .section-label{font-size:12px;color:var(--hint);font-weight:500;text-transform:uppercase;letter-spacing:.05em}
-.empty{text-align:center;padding:32px 16px;color:var(--hint)}
+.fab{
+  position:fixed;bottom:80px;right:16px;
+  width:52px;height:52px;border-radius:50%;
+  background:var(--btn);color:var(--btn-text);
+  border:none;font-size:28px;cursor:pointer;
+  display:none;align-items:center;justify-content:center;
+  box-shadow:0 4px 16px rgba(88,101,242,.5);
+  z-index:90;transition:transform .15s;
+}
+.fab:active{transform:scale(.92);}
+.fab.visible{display:flex;}
 .loader{text-align:center;padding:40px;color:var(--hint)}
 /* All levels accordion */
 .level-block{background:var(--bg2);border-radius:var(--radius);margin-bottom:10px;border:1px solid var(--border);overflow:hidden}
@@ -139,6 +149,9 @@ body{background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSy
   </button>
 </nav>
 
+<!-- FAB -->
+<button class="fab" id="fab" onclick="openModal('modal-task',null,null)">+</button>
+
 <!-- EDIT TASK MODAL -->
 <div class="modal-overlay" id="modal-edit">
   <div class="modal">
@@ -153,6 +166,10 @@ body{background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSy
   <div class="modal">
     <div class="modal-title">Новый квест</div>
     <input class="input" id="task-name-input" placeholder="Название задачи" maxlength="200"/>
+    <div id="chapter-select-wrap" style="display:none;margin-bottom:10px">
+      <div class="section-label" style="margin-bottom:8px">Глава</div>
+      <div id="chapter-select-row" class="select-row" style="grid-template-columns:1fr 1fr"></div>
+    </div>
     <div class="section-label" style="margin-bottom:8px">Навык</div>
     <div class="select-row">
       <button class="select-opt active" data-skill="Маркетинг" onclick="selectSkill(this)">Маркетинг</button>
@@ -204,6 +221,8 @@ function navigate(screen) {
   document.getElementById('screen-' + screen).classList.add('active');
   const idx = ['char','tasks','all','habits','ach'].indexOf(screen);
   document.querySelectorAll('.nav-btn')[idx].classList.add('active');
+  // Show FAB only on tasks screen
+  document.getElementById('fab').classList.toggle('visible', screen === 'tasks');
   if (screen === 'char') renderChar();
   if (screen === 'tasks') renderTasks();
   if (screen === 'all') renderAll();
@@ -367,7 +386,6 @@ function renderTasks() {
             <div class="section-label">${trackLabel(chap.name)}</div>
             <div style="font-size:15px;font-weight:600;margin-top:2px">${chap.name}</div>
           </div>
-          <button class="btn btn-sm" onclick="openModal('modal-task','${chap.id}','${trackLabel(chap.name)}')">+ Квест</button>
         </div>
         <div class="card" style="padding:6px 14px">
           ${todo.length ? todo.map(taskItemHTML).join('') : '<div style="padding:12px 0;color:var(--hint);font-size:13px;text-align:center">Все задачи выполнены! 🎉</div>'}
@@ -618,18 +636,40 @@ let editingTaskId = null;
 
 function openModal(id, chapterId, track) {
   modalChapterId = chapterId ?? null;
-  if (track === 'SPOTONE') {
+
+  // Show chapter selector if opening from FAB (no chapter preselected) and multiple active chapters
+  const wrap = document.getElementById('chapter-select-wrap');
+  if (!chapterId && state.activeChapters.length > 1) {
+    const row = document.getElementById('chapter-select-row');
+    row.innerHTML = state.activeChapters.map((c, i) => `
+      <button class="select-opt ${i===0?'active':''}" onclick="selectChapter(this,'${c.id}','${trackLabel(c.name)}')"
+        style="font-size:11px;text-align:left;padding:8px">${c.name}</button>`).join('');
+    modalChapterId = state.activeChapters[0].id;
+    wrap.style.display = 'block';
+  } else {
+    wrap.style.display = 'none';
+  }
+
+  // Auto-set skill based on track
+  const autoTrack = track || (state.activeChapters[0]?.name.startsWith('S') ? 'SPOTONE' : 'Маркетинг');
+  if (autoTrack === 'SPOTONE') {
     selectedSkill = 'SPOTONE';
-    document.querySelectorAll('.select-opt').forEach(b => {
-      b.classList.toggle('active', b.dataset.skill === 'SPOTONE');
-    });
+    document.querySelectorAll('.select-opt[data-skill]').forEach(b => b.classList.toggle('active', b.dataset.skill === 'SPOTONE'));
   } else {
     selectedSkill = 'Маркетинг';
-    document.querySelectorAll('.select-opt').forEach(b => {
-      b.classList.toggle('active', b.dataset.skill === 'Маркетинг');
-    });
+    document.querySelectorAll('.select-opt[data-skill]').forEach(b => b.classList.toggle('active', b.dataset.skill === 'Маркетинг'));
   }
   document.getElementById(id).classList.add('open');
+}
+
+function selectChapter(btn, chapterId, track) {
+  document.querySelectorAll('#chapter-select-row .select-opt').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  modalChapterId = chapterId;
+  // Auto-switch skill
+  const skill = track === 'SPOTONE' ? 'SPOTONE' : 'Маркетинг';
+  selectedSkill = skill;
+  document.querySelectorAll('.select-opt[data-skill]').forEach(b => b.classList.toggle('active', b.dataset.skill === skill));
 }
 
 function closeModal(id) {
