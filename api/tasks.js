@@ -44,11 +44,18 @@ export default async function handler(req, res) {
     }
 
     if (req.method === 'PATCH') {
-      const { id, status } = req.body;
+      const { id, status, name } = req.body;
       const props = {};
       if (status) props['Статус'] = select(status);
+      if (name) props['Название'] = title(name);
       const page = await updatePage(id, props);
       return res.json({ task: fmt(page) });
+    }
+
+    if (req.method === 'DELETE') {
+      const { id } = req.body;
+      await notionReq('PATCH', `/pages/${id}`, { archived: true });
+      return res.json({ ok: true });
     }
 
     res.status(405).end();
