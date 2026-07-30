@@ -161,6 +161,9 @@ if (tg) { tg.ready(); tg.expand(); }
 const API = '';
 const initData = tg?.initData ?? '';
 
+// Give Telegram time to initialize before first render
+setTimeout(loadAll, tg ? 400 : 0);
+
 let state = {
   skills: [],
   chapters: [],
@@ -621,7 +624,7 @@ async function submitTask() {
   renderTasks();
 }
 
-loadAll();
+// loadAll вызывается выше с задержкой
 </script>
 </body>
 </html>
